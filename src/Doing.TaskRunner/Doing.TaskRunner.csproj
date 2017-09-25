@@ -4,4 +4,18 @@
     <TargetFramework>netstandard2.0</TargetFramework>
   </PropertyGroup>
 
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+    <DocumentationFile>bin\Release\netstandard2.0\Doing.TaskRunner.xml</DocumentationFile>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <PackageId>Doing.TaskRunner</PackageId>
+    <PackageVersion>0.1.0</PackageVersion>
+    <Authors>Jorge Gamba</Authors>
+    <Description>Arranges the executions of tasks like Action, Func and Task with different kinds of styles</Description>
+    <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
+    <Copyright>Copyright 2017 (c) Jorge Gamba. All rights reserved.</Copyright>
+    <PackageTags>Task Automation Schedule Func Action</PackageTags>
+  </PropertyGroup>
+
 </Project>
