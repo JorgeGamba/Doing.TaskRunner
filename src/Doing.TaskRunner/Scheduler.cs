@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -7,6 +8,7 @@ namespace Doing.TaskRunner
     public class Scheduler
     {
         private readonly int _spinInterval;
+        private readonly Action<Exception> _handledExceptionFunc;
         private readonly CancellationToken _cancellationToken;
         private readonly IDictionary<string, Task> _scheduledTasks = new Dictionary<string, Task>();
         private readonly IDictionary<string, TaskRunner> _taskRunners = new Dictionary<string, TaskRunner>();
@@ -16,9 +18,10 @@ namespace Doing.TaskRunner
         /// </summary>
         /// <param name="spinInterval">Amount in milliseconds to wait between a signal emit and other.</param>
         /// <param name="cancellationToken">The cancellation token that will be checked prior to completing the returned task.</param>
-        public Scheduler(int spinInterval, CancellationToken cancellationToken)
+        public Scheduler(int spinInterval, Action<Exception> handledExceptionFunc, CancellationToken cancellationToken)
         {
             _spinInterval = spinInterval;
+            _handledExceptionFunc = handledExceptionFunc;
             _cancellationToken = cancellationToken;
         }
 
@@ -30,7 +33,7 @@ namespace Doing.TaskRunner
         public void ScheduleForever(string key, Task task)
         {
             _scheduledTasks.Add(key, task);
-            var taskRunner = new TaskRunner(key, taskKey => _scheduledTasks[taskKey], _spinInterval, _cancellationToken);
+            var taskRunner = new TaskRunner(key, taskKey => _scheduledTasks[taskKey], _spinInterval, _handledExceptionFunc, _cancellationToken);
             taskRunner.Run();
             _taskRunners.Add(key, taskRunner);
         }

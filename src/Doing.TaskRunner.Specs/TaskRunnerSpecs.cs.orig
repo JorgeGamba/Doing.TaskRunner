@@ -1,0 +1,347 @@
+﻿using System;
+using System.Diagnostics;
+using System.Threading;
+using System.Threading.Tasks;
+using Doing.BDDExtensions;
+using FluentAssertions;
+using NUnit.Framework;
+#pragma warning disable 4014
+
+namespace Doing.TaskRunner.Specs
+{
+    public class TaskRunnerSpecs : FeatureSpecifications
+    {
+<<<<<<< HEAD
+        public class When_Is_Running: TaskRunnerSpecs
+=======
+        void HandleExceptionFunc(Exception ex) => _handledException = ex;
+
+        public class WhenRunning: TaskRunnerSpecs
+>>>>>>> 710a057... working
+        {
+
+            public override async void When()
+            {
+                _result = _runner.Run();
+                Task.Delay(GetTimeoutFor(expectedExecutionTimes: 5, interval: _someSpinInterval)).Wait();
+                _runner.Stop();
+                _processException = Catch.Exception(() =>
+                    _result.Wait()
+                );
+            }
+
+            public class WhenFollowsARegularLifeCycle : WhenRunning
+            {
+                public override void Given()
+                {
+                    Task GetTaskFor(string key) => Task.Run(() =>
+                    {
+                        if (_startStopwatch.IsRunning)
+                            _startStopwatch.Stop();
+                        _executionCounter++;
+                    });
+                    _runner = new TaskRunner(_someKey, GetTaskFor, _someSpinInterval, HandleExceptionFunc, _someCancellationToken);
+                    _startStopwatch.Start();
+                }
+
+                [Test]
+                public void ShouldCompleteTheProcess() => 
+                    _result.IsCompleted.Should().BeTrue();
+
+                [Test]
+                public void ShouldCompleteTheProcessSuccessfully() => 
+                    _result.Status.Should().Be(TaskStatus.RanToCompletion);
+
+                [Test]
+                public void ShouldNotThrowAnyExceptionTheProcess()
+                {
+                    _processException.Should().BeNull();
+                    _result.Exception.Should().BeNull();
+                }
+
+                [Test]
+                public void ShouldNotPassAnyExceptionToTheExceptionHandeFunc() =>
+                    _handledException.Should().BeNull();
+
+                [Test]
+                public void ShouldRunTheTask() =>
+                    _executionCounter.Should().BePositive();
+
+                [Test]
+                public void ShouldRunTheTaskJustBeginning() =>
+                    _startStopwatch.ElapsedMilliseconds.Should().BeLessThan(_someSpinInterval);
+
+                [Test]
+                public void ShouldRunTheTaskOncePerInterval() =>
+                    _executionCounter.Should().Be(5); // Counting the beggining run, but can not reach the fourth execution
+
+
+                Stopwatch _startStopwatch = new Stopwatch();
+            }
+
+            public class WhenACommonExceptionHappens : WhenRunning
+            {
+                Exception _someCommonException = new Exception("Some Common Exception");
+
+                public override void Given()
+                {
+                    Task GetTaskFor(string key) => Task.Run(() =>
+                    {
+                        _executionCounter++;
+                        if (_executionCounter == 2)
+                            throw _someCommonException;
+                    });
+                    _runner = new TaskRunner(_someKey, GetTaskFor, _someSpinInterval, HandleExceptionFunc, _someCancellationToken);
+                }
+
+                [Test]
+                public void ShouldCompleteTheProcess() =>
+                    _result.IsCompleted.Should().BeTrue();
+
+                [Test]
+                public void ShouldCompleteTheProcessSuccessfully() =>
+                    _result.Status.Should().Be(TaskStatus.RanToCompletion);
+
+                [Test]
+                public void ShouldNotThrowAnyExceptionTheProcess()
+                {
+                    _processException.Should().BeNull();
+                    _result.Exception.Should().BeNull();
+                }
+
+                [Test]
+                public void ShouldPassTheExceptionToTheExceptionHandeFunc() =>
+                    _handledException.Should().NotBeNull();
+
+                [Test]
+                public void ShouldPassTheSameCauseExceptionToTheExceptionHandeFunc() =>
+                    _handledException.Should().Be(_someCommonException);
+
+                [Test]
+                public void ShouldRunTheTaskOncePerIntervalEvenTheFailing() =>
+                    _executionCounter.Should().Be(5); // Counting the beggining run
+            }
+
+<<<<<<< HEAD
+            [Test]
+            public void Should_run_the_task() =>
+                _executionCounter.Should().BePositive();
+
+            [Test]
+            public void Should_run_the_task_just_beginning() =>
+                _startStopwatch.ElapsedMilliseconds.Should().BeLessThan(_someSpinInterval);
+
+            [Test]
+            public void Should_run_the_task_once_per_interval() =>
+                _executionCounter.Should().Be(3); // Counting the beggining run, but can not reach the fourth execution
+=======
+            public class WhenAnTaskCanceledExceptionnHappens : WhenRunning
+            {
+                public override void Given()
+                {
+                    Task GetTaskFor(string key) => Task.Run(() =>
+                    {
+                        _executionCounter++;
+                        if (_executionCounter == 2)
+                            throw new TaskCanceledException();
+                    });
+                    _runner = new TaskRunner(_someKey, GetTaskFor, _someSpinInterval, HandleExceptionFunc, _someCancellationToken);
+                }
+
+                [Test]
+                public void ShouldCompleteTheProcess() =>
+                    _result.IsCompleted.Should().BeTrue();
+
+                [Test]
+                public void ShouldCompleteTheProcessAsCanceled() =>
+                    _result.Status.Should().Be(TaskStatus.Canceled);
+
+                [Test]
+                public void ShouldThrowAnExceptionTheProcess() =>
+                    _processException.Should().NotBeNull();
+>>>>>>> 710a057... working
+
+                [Test]
+                public void ShouldThrowAnExceptionTheProcessOfTypeCanceledExceptionTheProcess() =>
+                    _processException.InnerException.Should().BeOfType<TaskCanceledException>();
+
+                [Test]
+                public void ShouldNotPassAnyExceptionToTheExceptionHandeFunc() =>
+                    _handledException.Should().BeNull();
+
+                [Test]
+                public void ShouldNotRunTheTaskMoreTimesLater() =>
+                    _executionCounter.Should().Be(2); // Counting the beggining run
+            }
+
+            public class WhenAnOperationCanceledExceptionHappens : WhenRunning
+            {
+                public override void Given()
+                {
+                    Task GetTaskFor(string key) => Task.Run(() =>
+                    {
+                        _executionCounter++;
+                        if (_executionCounter == 2)
+                            throw new OperationCanceledException();
+                    });
+                    _runner = new TaskRunner(_someKey, GetTaskFor, _someSpinInterval, HandleExceptionFunc, _someCancellationToken);
+                }
+
+                [Test]
+                public void ShouldCompleteTheProcess() =>
+                    _result.IsCompleted.Should().BeTrue();
+
+                [Test]
+                public void ShouldCompleteTheProcessAsCanceled() =>
+                    _result.Status.Should().Be(TaskStatus.Canceled);
+
+                [Test]
+                public void ShouldThrowAnExceptionTheProcess() =>
+                    _processException.Should().NotBeNull();
+
+                [Test]
+                public void ShouldThrowAnExceptionTheProcessOfTypeCanceledExceptionTheProcess() =>
+                    _processException.InnerException.Should().BeOfType<TaskCanceledException>();
+
+                [Test]
+                public void ShouldNotPassAnyExceptionToTheExceptionHandeFunc() =>
+                    _handledException.Should().BeNull();
+
+                [Test]
+                public void ShouldNotRunTheTaskMoreTimesLater() =>
+                    _executionCounter.Should().Be(2); // Counting the beggining run
+            }
+
+            public class WhenIsStopped : WhenRunning
+            {
+                public override void Given()
+                {
+                    Task GetTaskFor(string key) => Task.Run(() =>
+                    {
+                        _executionCounter++;
+                        if (_executionCounter == 2)
+                            _runner.Stop();
+                    });
+                    _runner = new TaskRunner(_someKey, GetTaskFor, _someSpinInterval, HandleExceptionFunc, _someCancellationToken);
+                }
+
+                [Test]
+                public void ShouldCompleteTheProcess() =>
+                    _result.IsCompleted.Should().BeTrue();
+
+                [Test]
+                public void ShouldCompleteTheProcessAsCanceled() =>
+                    _result.Status.Should().Be(TaskStatus.Canceled);
+
+                [Test]
+                public void ShouldThrowAnExceptionTheProcess() =>
+                    _processException.Should().NotBeNull();
+
+                [Test]
+                public void ShouldThrowAnExceptionTheProcessOfTypeCanceledExceptionTheProcess() =>
+                    _processException.InnerException.Should().BeOfType<TaskCanceledException>();
+
+                [Test]
+                public void ShouldNotPassAnyExceptionToTheExceptionHandeFunc() =>
+                    _handledException.Should().BeNull();
+
+                [Test]
+                public void ShouldNotRunTheTaskMoreTimesLater() =>
+                    _executionCounter.Should().Be(2); // Counting the beggining run
+            }
+        }
+
+<<<<<<< HEAD
+        public class When_Is_Stopped : TaskRunnerSpecs
+=======
+        public class WhenStop : TaskRunnerSpecs
+>>>>>>> 710a057... working
+        {
+            public override void Given()
+            {
+                Task GetTaskFor(string key) => Task.Run(() => _executionCounter++);
+                _runner = new TaskRunner(_someKey, GetTaskFor, _someSpinInterval, HandleExceptionFunc, _someCancellationToken);
+                _runner.Run();
+            }
+
+            public override void When()
+            {
+                Task.Delay(GetTimeoutFor(expectedExecutionTimes: 3, interval: _someSpinInterval)).Wait();
+                _runner.Stop();
+                Task.Delay(_someSpinInterval * 2).Wait();
+            }
+
+            [Test]
+<<<<<<< HEAD
+            public void Should_not_run_the_task_more_times_later() =>
+=======
+            public void ShouldCompleteTheProcess()
+            {
+                _result.IsCompleted.Should().BeTrue();
+                _result.Status.Should().Be(TaskStatus.RanToCompletion);
+            }
+
+            [Test]
+            public void ShouldNotRunTheTaskMoreTimesLater() =>
+>>>>>>> 710a057... working
+                _executionCounter.Should().Be(3); // Counting the beggining run
+        }
+
+        //public class WhenIsCancelled : TaskRunnerSpecs
+        //{
+        //    public override void Given()
+        //    {
+        //        Task GetTaskFor(string key) => Task.Run(() => _executionCounter++);
+        //        _cancellationTokenSource = new CancellationTokenSource();
+        //        _runner = new TaskRunner(_someKey, GetTaskFor, _someSpinInterval, _cancellationTokenSource.Token);
+        //        _runner.Run();
+        //    }
+
+        //    public override void When()
+        //    {
+        //        _processException = Catch.Exception(() =>
+        //            _result = _runner.Run()
+        //        );
+        //        Task.Delay(GetTimeoutFor(expectedExecutionTimes: 3, interval: _someSpinInterval)).Wait();
+        //        _runner.Stop();
+        //        await _result;
+
+        //        Task.Delay(GetTimeoutFor(expectedExecutionTimes: 3, interval: _someSpinInterval)).Wait();
+        //        _cancellationTokenSource.Cancel();
+        //        Task.Delay(_someSpinInterval * 2).Wait();
+        //        _runner.Stop();
+        //    }
+
+        //    [Test]
+        //    public void ShouldCompleteTheProcess()
+        //    {
+        //        _result.IsCompleted.Should().BeTrue();
+        //        _result.Status.Should().Be(TaskStatus.RanToCompletion);
+        //    }
+
+        //    [Test]
+        //    public void ShouldNotRunTheTaskMoreTimesLater() =>
+        //        _executionCounter.Should().Be(3); // Counting the beggining run
+
+        //    //[Test]
+        //    //public void ShouldThrowAnException() =>
+
+
+
+        //    CancellationTokenSource _cancellationTokenSource;
+        //}
+
+
+        static int GetTimeoutFor(int expectedExecutionTimes, int interval) => interval * expectedExecutionTimes - interval / 2;
+
+        int _executionCounter;
+        TaskRunner _runner;
+        Exception _processException;
+        Task _result;
+        Exception _handledException;
+
+        static string _someKey = "some key";
+        static int _someSpinInterval = 100;
+        static CancellationToken _someCancellationToken = CancellationToken.None;
+    }
+}
